@@ -1,7 +1,8 @@
 var PORT = 8080;       //端口
 var temp ="../"
 // var DIR = 'rtcDemo';     //用于存放html的目录
-var DIR = 'audioCtx';
+// var DIR = 'audioCtx';     //用于存放html的目录
+var DIR = 'webSocketDemo';
 
 var http = require('http');
 var url=require('url');

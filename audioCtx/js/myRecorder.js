@@ -36,11 +36,15 @@ var webRecorder = (function () {
                 let tempLength = data.length;
                 this.buffer.push(new Float32Array(data));
                 this.size += tempLength;
+                if(data.length){
+                    return this.encodeAMR(tempAry, tempLength);
+                }else{
+                    return
+                }
 
-                return this.encodeWAV(tempAry, tempLength);
             }
             /**
-             *  将存放的宿主
+             *  将语音数组屡平
              * @param ary   语音集合
              * @param size  语音长度
              * @returns {Float32Array}
@@ -53,16 +57,23 @@ var webRecorder = (function () {
                     offset += ary[i].length;
                 }
                 return data;
-
             }
+         
+            /**
+             * 将音频流转成wav
+             * @param stream
+             * @param size
+             * @returns {Blob}
+             */
+            , encodeWAV: function (stream, size) {
+
             /**
              *  压缩音频
-             * @type {number}
+             * @param {*} data 
              */
-            , compress:  (data)=> { //合并压缩
+            function compress  (data){ //合并压缩
                 // let compression = parseInt(this.inputSampleRate / this.outputSampleRate);
                 let compression = 9;
-
                 let length = data.length / compression;
                 let result = new Float32Array(length);
                 let index = 0, j = 0;
@@ -73,17 +84,11 @@ var webRecorder = (function () {
                 }
                 return result;
             }
-            /**
-             * 组成头文件
-             * @param stream
-             * @param size
-             * @returns {Blob}
-             */
-            , encodeWAV: function (stream, size) {
+
                 let sampleRate = Math.min(this.inputSampleRate, this.outputSampleRate);
                 let sampleBits = Math.min(this.inputSampleBits, this.oututSampleBits);
                 let temp = this.merge(stream,size);//数据整理
-                let bytes = this.compress(temp);//音频压缩
+                let bytes = compress(temp);//音频压缩
                 let dataLength = bytes.length * (sampleBits / 8);
                 let buffer = new ArrayBuffer(44 + dataLength);
                 let data = new DataView(buffer);
@@ -123,7 +128,7 @@ var webRecorder = (function () {
                 offset += 4;
                 // 快数据调整数 采样一次占用字节数 单声道×每样本的数据位数/8
                 data.setUint16(offset, channelCount * (sampleBits / 8), true);
-                offset += 2;
+                offset += 2;audioData
                 // 每样本数据位数
                 data.setUint16(offset, sampleBits, true);
                 offset += 2;
@@ -154,30 +159,21 @@ var webRecorder = (function () {
              * @param buffer
              * @param size
              */
-            encodeAMR(){
-                let data = this.merge(this.buffer,this.size);
+            encodeAMR(buffer,size){
+                let data = this.merge(buffer,size);
                 console.info("data:",data);
-                var amr = AMR.encode(data, this.inputSampleRate, 7);
-                console.info("amr:",amr);
+                let amr = AMR.encode(data, this.inputSampleRate, 7);
+                let temp = AMR.toWAV(amr)
+                let wavBlob =    new Blob([temp], {type: 'audio/wav'});
+                let amrBlob = new Blob([amr],{type:'audio/amr'});
+                let amrUrk =window.URL.createObjectURL(amrBlob);
+                console.error('amr',amrUrk);
+                let wavUrl = window.URL.createObjectURL(wavBlob);
+                console.error('wav',wavUrl);
 
-                // var samples = AMR.decode(amr);
-                console.info("samples:",amr);
-                let amrBlob = new Blob([amr],{'type':'audio/amr'});
-                // saveAs(amrBlob, 'test.amr');
-                let url = window.URL.createObjectURL(amrBlob);
-                console.error(url)
-                // var src = audioCtx.createBufferSource();
-                // var buffer = audioCtx.createBuffer(1, samples.length, 8000);
-                // if (buffer.copyToChannel) {
-                //     buffer.copyToChannel(samples, 0, 0)
-                // } else {
-                //     var channelBuffer = buffer.getChannelData(0);
-                //     channelBuffer.set(samples);
-                // }
+              
+                return wavBlob;
 
-                // src.buffer = buffer;
-                // src.connect(audioCtx.destination);
-                // src.start();
             }
         };
 
@@ -194,10 +190,11 @@ var webRecorder = (function () {
         this.stop = () => {
             //关闭轨道链接
             audioBufferChannel.disconnect();
-            console.info("录音停止!");
-           audioData.encodeAMR();
-            // let url = window.URL.createObjectURL(blob);
-            // console.log(url)
+            // console.info("录音停止!");
+
+        //   let blob=  audioData.encodeWAV(audioData.buffer,audioData.size);
+        //     let url = window.URL.createObjectURL(blob);
+        //     console.error(url)
             // callback(url);
 
 
@@ -211,7 +208,6 @@ var webRecorder = (function () {
                 let url = window.URL.createObjectURL(blob);
                 callback(url);
             }
-
         };
 
     };

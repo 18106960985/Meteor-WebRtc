@@ -7,7 +7,6 @@ var AMR = {
    * @returns {Uint8Array} wav data if succeeded. Otherwise null.
    */
   toWAV: function(amr) {
-debugger
     var decoded= this._decode(amr);
     if (!decoded) {
       return null;
@@ -60,7 +59,6 @@ debugger
     write_int32(raw.length);
 
     out.set(raw, offset);
-
     return out;
   },
 
