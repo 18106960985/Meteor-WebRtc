@@ -4,7 +4,7 @@ var Service = (function() {
    * socket 全局变量定义
    * */
   var Socket = undefined,
-    host = "localhost",
+  host = "111.230.210.81",
     port = 9527;
   var Service = {
     biz: {
@@ -30,11 +30,17 @@ var Service = (function() {
           /**
            * 服务器推送过来的是一个blob并非2进制需要进行读取
            */
+
+
+        
+
+
           let fileRead = new FileReader();
           fileRead.readAsArrayBuffer(blob);
           fileRead.onloadend=(e)=>{
             let buffer = new Uint8Array(e.target.result);
-            iRecoreder.addAudio(buffer);
+            // iRecoreder.addAudio(buffer);
+            iRecoreder.playAudio(buffer);
           };
 
           // iRecoreder.addAudio(buffer);

@@ -1,11 +1,11 @@
 var webRecorder = (function() {
   //兼容
   window.URL = window.URL || window.webkitURL;
-  navigator.getUserMedia =
-    navigator.getUserMedia ||
-    navigator.webkitGetUserMedia ||
-    navigator.mozGetUserMedia ||
-    navigator.msGetUserMedia;
+  // navigator.getUserMedia =
+  //   navigator.getUserMedia ||
+  //   navigator.webkitGetUserMedia ||
+  //   navigator.mozGetUserMedia ||
+  //   navigator.msGetUserMedia;
 
   let audioContr = function(stream, config = {}, callback) {
     config.sampleBits = config.sampleBits || 8; //采样数位 8, 16
@@ -197,6 +197,14 @@ var webRecorder = (function() {
         // console.error(amrBlob)
         // console.error(url)
         return amr;
+      },
+      //获取audioContext 
+      getAudioContext(){
+        if(!audioCtx){
+          audioCtx  = new (window.AudioContext || webkitAudioContext)();
+        }
+        return audioCtx;
+
       }
     };
 
@@ -242,35 +250,36 @@ var webRecorder = (function() {
   };
   //获取录音机
   audioContr.get = (callback, blolCallback, config) => {
-    if (navigator.getUserMedia) {
-      navigator.getUserMedia(
-        { audio: true }, //只启用音频
-        stream => {
-          //返回对象
-          callback(new audioContr(stream, config, blolCallback));
-        },
-        error => {
-          switch (error.code || error.name) {
-            case "PERMISSION_DENIED":
-            case "PermissionDeniedError":
-              audioContr.throwError("用户拒绝提供信息。");
-              break;
-            case "NOT_SUPPORTED_ERROR":
-            case "NotSupportedError":
-              audioContr.throwError("浏览器不支持硬件设备。");
-              break;
-            case "MANDATORY_UNSATISFIED_ERROR":
-            case "MandatoryUnsatisfiedError":
-              audioContr.throwError("无法发现指定的硬件设备。");
-              break;
-            default:
-              audioContr.throwError(
-                "无法打开麦克风。异常信息:" + (error.code || error.name)
-              );
-              break;
-          }
+    if (navigator.mediaDevices) {
+      navigator.mediaDevices.getUserMedia({audio:true})
+      .then( stream =>{
+  //返回对象
+  callback(new audioContr(stream, config, blolCallback));
+      })
+      .catch(error =>{
+        switch (error.code || error.name) {
+          case "PERMISSION_DENIED":
+          case "PermissionDeniedError":
+            audioContr.throwError("用户拒绝提供信息。");
+            break;
+          case "NOT_SUPPORTED_ERROR":
+          case "NotSupportedError":
+            audioContr.throwError("浏览器不支持硬件设备。");
+            break;
+          case "MANDATORY_UNSATISFIED_ERROR":
+          case "MandatoryUnsatisfiedError":
+            audioContr.throwError("无法发现指定的硬件设备。");
+            break;
+          default:
+            audioContr.throwError(
+              "无法打开麦克风。异常信息:" + (error.code || error.name)
+            );
+            break;
         }
-      );
+      });
+
+
+     
     }
   };
 

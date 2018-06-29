@@ -15,12 +15,11 @@ var iRecoreder = (function(){
         //画布上下文
         canvasCtx: document.getElementById("soundWave").getContext("2d"),
         recController: undefined,
+        audioCtx:  new (window.AudioContext || webkitAudioContext)(),
         // get(){
         //   return new iRecoreder();
         // },
         init() {
-
-
             this.stop.disabled = true;
             this.record.disable = false;
             this.onRecord();
@@ -72,9 +71,11 @@ var iRecoreder = (function(){
             this.stop.disabled = true;
             this.record.disabled = false;
         },
+        /**
+         *  该方法是展现可视化的语音文件
+         * @param {*} blob amr媒体文件 
+         */
         addAudio(blob) {
-          
-            
             let data = AMR.toWAV(blob);
             let wavblob =  new Blob([data], { type: 'audio/wav; codecs=opus'});
             // console.log(blob)
@@ -113,6 +114,28 @@ var iRecoreder = (function(){
                 }
             };
         },
+        /**
+         * 直接播放 音频
+         * @param {Uint8Array} array  
+         */
+        playAudio(array){
+            let samples = AMR.decode(array);
+            let ctx = this.getAudioContext();
+            let src = ctx.createBufferSource();
+            let buffer = ctx.createBuffer(1, samples.length, 8000);
+            if (buffer.copyToChannel) {
+                buffer.copyToChannel(samples, 0, 0)
+            } else {
+                var channelBuffer = buffer.getChannelData(0);
+                channelBuffer.set(samples);
+            }
+    
+            src.buffer = buffer;
+            src.connect(ctx.destination);
+            src.start();
+
+        },
+
         //绘制声波图
         soundWave(audioCtx, source) {
             let analyser = audioCtx.createAnalyser();
@@ -154,7 +177,14 @@ var iRecoreder = (function(){
                 );
                 iRecoreder.canvasCtx.stroke();
             }
+        },
+    //获取audioContext 用来播放的
+      getAudioContext(){
+        if(!this.audioCtx){
+            this.audioCtx  = new (window.AudioContext || webkitAudioContext)();
         }
+        return this.audioCtx;
+      }
     };
    
     
